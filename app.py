@@ -7,7 +7,7 @@ import os
 
 app = Flask(__name__)
 
-# Load model once (important for hosting)
+# load model once (important for hosting)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def chunk_text(text, max_length=500):
@@ -33,26 +33,26 @@ def upload_pdf():
     if not pdf:
         return "No PDF uploaded.", 400
 
-    # Save uploaded file temporarily
+    # save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         pdf.save(tmp.name)
         pdf_path = tmp.name
 
-    # Extract text
+    # extract text
     reader = PdfReader(pdf_path)
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
 
-    # Chunk and embed
+    # chunk and embed
     chunks = chunk_text(text)
     embeddings = model.encode(chunks, show_progress_bar=False)
 
-    # Save output JSON
+    # save output JSON
     json_filename = os.path.splitext(pdf.filename)[0] + "_embeddings.json"
     json_path = os.path.join(tempfile.gettempdir(), json_filename)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump({"chunks": chunks, "embeddings": embeddings.tolist()}, f, ensure_ascii=False, indent=2)
 
-    # Clean temp PDF
+    # clean temp PDF
     os.remove(pdf_path)
 
     return send_file(json_path, as_attachment=True)
