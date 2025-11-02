@@ -1,6 +1,6 @@
 # Pec - PDF to Embeddings Converter
 
-Drag and drop a PDF file to get a JSON containing text chunks and their embeddings ready to use with any LLM or RAG
+Drag and drop a PDF to get a JSON containing text chunks and their embeddings ready to use with any LLM or RAG
 
 ## Run it locally
 
@@ -10,7 +10,7 @@ Best used offline for large PDFs. No APIs required.
 
 ```bash
 git clone https://github.com/HeySkidee/Pec
-cd pdf-to-embeddings-convertor
+cd Pec
 ```
 
 ### Create a virtual environment (recommended)
