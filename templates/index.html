@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>PDF to Embeddings Generator (Offline)</title>
+<style>
+  body {
+    background-color: #0e1117;
+    color: #eaeaea;
+    font-family: "Inter", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+  }
+
+  p {
+    color: #b0b3b8;
+    margin-top: -10px;
+    margin-bottom: 30px;
+  }
+
+  .upload-box {
+    background-color: #1a1d23;
+    border: 2px dashed #3a3f47;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    width: 480px;
+    transition: 0.3s;
+  }
+
+  .upload-box.dragover {
+    border-color: #00b4d8;
+    background-color: #1f2530;
+  }
+
+  input[type=file] {
+    display: none;
+  }
+
+  label {
+    background-color: #2d333b;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  label:hover {
+    background-color: #3c444e;
+  }
+
+  #status {
+    margin-top: 25px;
+    width: 480px;
+  }
+
+  .step {
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step.pending { background: #1f2833; color: #ddd; }
+  .step.active { background: #0d6efd33; color: #cce5ff; }
+  .step.done { background: #155724; color: #d4edda; }
+  .step.error { background: #842029; color: #f8d7da; }
+
+  button.download {
+    margin-top: 15px;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: 0.2s;
+  }
+
+  button.download:hover {
+    background: #0b5ed7;
+  }
+</style>
+</head>
+<body>
+
+<h1>📘 PDF to Embeddings Generator (Offline)</h1>
+<p>Upload a PDF file to generate embeddings locally.</p>
+
+<div class="upload-box" id="uploadBox">
+  <p>Drag and drop a PDF file here</p>
+  <p>or</p>
+  <label for="pdfInput">Browse files</label>
+  <input type="file" id="pdfInput" accept=".pdf">
+</div>
+
+<div id="status"></div>
+
+<script>
+const uploadBox = document.getElementById("uploadBox");
+const input = document.getElementById("pdfInput");
+const statusDiv = document.getElementById("status");
+
+uploadBox.addEventListener("dragover", e => {
+  e.preventDefault();
+  uploadBox.classList.add("dragover");
+});
+
+uploadBox.addEventListener("dragleave", () => {
+  uploadBox.classList.remove("dragover");
+});
+
+uploadBox.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadBox.classList.remove("dragover");
+  input.files = e.dataTransfer.files;
+  handleUpload();
+});
+
+input.addEventListener("change", handleUpload);
+
+function setStatus(steps) {
+  statusDiv.innerHTML = steps.map(step =>
+    `<div class="step ${step.state}">${step.text}</div>`
+  ).join("");
+}
+
+async function handleUpload() {
+  if (!input.files.length) return;
+  const file = input.files[0];
+
+  setStatus([{ text: `Reading and processing ${file.name}...`, state: "active" }]);
+
+  const formData = new FormData();
+  formData.append("pdf", file);
+
+  try {
+    setStatus([
+      { text: `Reading and processing ${file.name}...`, state: "done" },
+      { text: "Loading embedding model... (this may take a few seconds)", state: "active" }
+    ]);
+
+    const res = await fetch("/upload", { method: "POST", body: formData });
+
+    // Expect Flask to return a file, not JSON
+    if (!res.ok) throw new Error("Server error");
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name.replace(".pdf", "_embeddings.json");
+
+    setStatus([
+      { text: `Reading and processing ${file.name}...`, state: "done" },
+      { text: "Loading embedding model...", state: "done" },
+      { text: "Generating embeddings...", state: "done" },
+      { text: `✅ Generated text chunks with embeddings.`, state: "done" }
+    ]);
+
+    const btn = document.createElement("button");
+    btn.classList.add("download");
+    btn.textContent = "📥 Download JSON File";
+    btn.onclick = () => a.click();
+    statusDiv.appendChild(btn);
+
+  } catch (err) {
+    setStatus([{ text: "❌ Error processing file.", state: "error" }]);
+  }
+}
+</script>
+
+</body>
+</html>
