@@ -2,6 +2,8 @@
 
 Upload a PDF and get a JSON file containing text chunks and their embeddings, ready to use with any LLM or RAG
 
+<img width="80%" alt="image" src="https://github.com/user-attachments/assets/7452b027-a504-414b-b0c2-22a5580c6a73" />
+
 ## Run it locally
 
 Best used offline for large PDFs. No APIs required.
